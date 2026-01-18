@@ -99,8 +99,8 @@ fun CountdownItem(event: CountdownEvent, onDelete: () -> Unit) {
                 )
             }
             Column(horizontalAlignment = Alignment.End) {
-                 Text(
-                    text = DateUtils.getTimeRemaining(event.targetDate),
+                Text(
+                    text = DateUtils.getTimeRemaining(event),
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold
                 )

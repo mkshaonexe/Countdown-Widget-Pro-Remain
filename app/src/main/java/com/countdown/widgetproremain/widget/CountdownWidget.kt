@@ -80,7 +80,7 @@ class CountdownWidget : GlanceAppWidget() {
                     // 1x1 Layout: Minimal info
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = DateUtils.getTimeRemaining(event.targetDate).split(" ").firstOrNull() ?: "0",
+                            text = DateUtils.getTimeRemaining(event).split(" ").firstOrNull() ?: "0",
                             style = TextStyle(color = ColorProvider(Color.White), fontSize = 14.sp)
                         )
                     }
@@ -92,7 +92,7 @@ class CountdownWidget : GlanceAppWidget() {
                             style = TextStyle(color = ColorProvider(Color.White), fontSize = 14.sp)
                         )
                         Text(
-                            text = DateUtils.getTimeRemaining(event.targetDate),
+                            text = DateUtils.getTimeRemaining(event),
                             style = TextStyle(color = ColorProvider(Color.White), fontSize = 18.sp)
                         )
                     }
@@ -104,7 +104,7 @@ class CountdownWidget : GlanceAppWidget() {
                             style = TextStyle(color = ColorProvider(Color.White), fontSize = 18.sp)
                         )
                         Text(
-                            text = DateUtils.getTimeRemaining(event.targetDate),
+                            text = DateUtils.getTimeRemaining(event),
                             style = TextStyle(color = ColorProvider(Color.White), fontSize = 24.sp)
                         )
                     }
