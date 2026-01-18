@@ -66,6 +66,9 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
+    // WorkManager for widget updates
+    implementation(libs.androidx.work.runtime.ktx)
+
     // Gson
     implementation(libs.google.gson)
     testImplementation(libs.junit)

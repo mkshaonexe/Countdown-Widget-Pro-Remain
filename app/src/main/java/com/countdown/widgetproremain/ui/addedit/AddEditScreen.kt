@@ -87,7 +87,14 @@ fun AddEditScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Count Up (Time Since)", style = MaterialTheme.typography.bodyLarge)
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Count Up (Time Since)", style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        "Track time elapsed since a past event",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
                 Switch(
                     checked = isCountUp,
                     onCheckedChange = { isCountUp = it }
