@@ -70,6 +70,51 @@ object DateUtils {
         return "$minutes minutes"
     }
 
+    fun getDaysOnly(event: com.countdown.widgetproremain.data.model.CountdownEvent): String {
+        val now = LocalDateTime.now()
+        val target = getDisplayDate(event)
+        val days = if (event.isCountUp) {
+            ChronoUnit.DAYS.between(target, now)
+        } else {
+             ChronoUnit.DAYS.between(now, target)
+        }
+        return days.toString()
+    }
+    
+    fun getHoursMinutes(event: com.countdown.widgetproremain.data.model.CountdownEvent): String {
+        val now = LocalDateTime.now()
+        val target = getDisplayDate(event)
+        
+        val start = if (event.isCountUp) target else now
+        val end = if (event.isCountUp) now else target
+        
+        if (start.isAfter(end)) return "0h 0m"
+        
+        val totalMinutes = ChronoUnit.MINUTES.between(start, end)
+        val hours = (totalMinutes % (24 * 60)) / 60
+        val minutes = totalMinutes % 60
+        
+        return "${hours}h ${minutes}m"
+    }
+
+    fun getFullBreakdown(event: com.countdown.widgetproremain.data.model.CountdownEvent): Triple<String, String, String> {
+        val now = LocalDateTime.now()
+        val target = getDisplayDate(event)
+
+        val start = if (event.isCountUp) target else now
+        val end = if (event.isCountUp) now else target
+
+        if (start.isAfter(end)) return Triple("0", "0", "0")
+
+        val days = ChronoUnit.DAYS.between(start, end)
+        val tempDate = start.plusDays(days)
+        val hours = ChronoUnit.HOURS.between(tempDate, end)
+        val tempDate2 = tempDate.plusHours(hours)
+        val minutes = ChronoUnit.MINUTES.between(tempDate2, end)
+
+        return Triple(days.toString(), hours.toString(), minutes.toString())
+    }
+
     // Keep the old method for compatibility if needed, or remove it. 
     // The widget uses the old method signature: getTimeRemaining(Long)
     // We should update the widget to use the new one.

@@ -18,8 +18,12 @@ import androidx.glance.currentState
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
+import androidx.glance.layout.Row
+import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.padding
+import androidx.glance.layout.height
+import androidx.glance.layout.width
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
@@ -81,17 +85,22 @@ class CountdownWidget : GlanceAppWidget() {
     fun WidgetContent(events: List<CountdownEvent>, selectedEvent: CountdownEvent?) {
         val size = LocalSize.current
         
-        // Size logic
-        val isSmall = size.width < 100.dp && size.height < 100.dp
-        val isList = size.height >= 180.dp
+        // Define breakpoints based on PRD and Material Guidelines
+        // 1x1: < 100dp width/height
+        // 2x1 / 4x1 (Horizontal): height < 100dp, width >= 100dp
+        // 4x2 (Detailed): height >= 100dp, width >= 150dp
+        // List: height >= 180dp (or larger specific mode) or forcing list mode?
+        // Let's rely on size since user resizing determines the intent mostly.
         
-        // Background color based on selected event (or neutral if list/empty)
-        val backgroundColor = if (selectedEvent != null && !isList) {
+        val isSmallSquare = size.width < 100.dp && size.height < 100.dp
+        val isHorizontal = size.height < 100.dp && size.width >= 100.dp
+        val isDetailed = size.height >= 100.dp && size.width >= 100.dp
+        
+        // Determine Background Color
+        val backgroundColor = if (selectedEvent != null) {
             getUrgencyColor(selectedEvent.targetDate)
-        } else if (isList && events.isNotEmpty()) {
-             Color(0xFF263238) // Darker background for list
         } else {
-            Color.DarkGray
+             Color(0xFF263238)
         }
 
         Box(
@@ -101,64 +110,161 @@ class CountdownWidget : GlanceAppWidget() {
                 .padding(8.dp),
             contentAlignment = Alignment.Center
         ) {
-            if (isList) {
-                // List Layout (Full Grid) - Shows ALL events still? 
-                // Using "Full Grid (4x3, 4x4): Multiple events in one widget" from PRD.
-                // So List mode should probably ignore the specific selection or default to list.
-                // If the user picked a specific event but resized to list, maybe highlight it? 
-                // For now, let's keep List showing all.
-                if (events.isEmpty()) {
-                     Text(
-                        text = "No Events",
+            if (events.isEmpty()) {
+                 Text(
+                    text = "No Events",
+                    style = TextStyle(color = ColorProvider(Color.White), fontSize = 12.sp)
+                )
+            } else if (selectedEvent == null) {
+                // No specific event selected, show List if space permits, otherwise suggest selection
+                if (size.height >= 120.dp && size.width >= 120.dp) {
+                    ListLayout(events)
+                } else {
+                    Text(
+                        text = "Select Event",
                         style = TextStyle(color = ColorProvider(Color.White), fontSize = 12.sp)
                     )
-                } else {
-                    val sortedEvents = events.sortedBy { it.targetDate }
-                    LazyColumn(modifier = androidx.glance.GlanceModifier.fillMaxSize()) {
-                        items(sortedEvents) { event ->
-                             Column(
-                                modifier = androidx.glance.GlanceModifier.padding(vertical = 4.dp).fillMaxSize()
-                            ) {
-                                Text(
-                                    text = event.title,
-                                    style = TextStyle(color = ColorProvider(Color.White), fontSize = 14.sp)
-                                )
-                                Text(
-                                    text = DateUtils.getTimeRemaining(event),
-                                    style = TextStyle(color = ColorProvider(Color.LightGray), fontSize = 12.sp)
-                                )
-                            }
-                        }
-                    }
                 }
             } else {
-                // Single Event Modes
-                if (selectedEvent == null) {
-                    Text(
-                        text = "No Event",
-                        style = TextStyle(color = ColorProvider(Color.White), fontSize = 12.sp)
+               // Event is selected
+               when {
+                   isSmallSquare -> SmallLayout(selectedEvent)
+                   isHorizontal -> HorizontalLayout(selectedEvent)
+                   isDetailed -> DetailedLayout(selectedEvent)
+                   else -> DetailedLayout(selectedEvent) // Fallback
+               }
+            }
+        }
+    }
+
+    @Composable
+    fun SmallLayout(event: CountdownEvent) {
+         Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = androidx.glance.GlanceModifier.fillMaxSize()
+        ) {
+            Text(
+                text = DateUtils.getDaysOnly(event),
+                style = TextStyle(
+                    color = ColorProvider(Color.White), 
+                    fontSize = 24.sp,
+                    fontWeight = androidx.glance.text.FontWeight.Bold
+                )
+            )
+            Text(
+                text = "DAYS",
+                style = TextStyle(color = ColorProvider(Color.White), fontSize = 10.sp)
+            )
+        }
+    }
+
+    @Composable
+    fun HorizontalLayout(event: CountdownEvent) {
+        androidx.glance.layout.Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = androidx.glance.GlanceModifier.fillMaxSize()
+        ) {
+            Column(
+                modifier = androidx.glance.GlanceModifier.defaultWeight()
+            ) {
+                Text(
+                    text = event.title,
+                    style = TextStyle(
+                        color = ColorProvider(Color.White), 
+                        fontSize = 16.sp,
+                        fontWeight = androidx.glance.text.FontWeight.Medium
+                    ),
+                    maxLines = 1
+                )
+            }
+            androidx.glance.layout.Spacer(modifier = androidx.glance.GlanceModifier.width(8.dp))
+            Column(
+                horizontalAlignment = Alignment.End
+            ) {
+                 Text(
+                    text = DateUtils.getDaysOnly(event) + "d",
+                    style = TextStyle(
+                        color = ColorProvider(Color.White), 
+                        fontSize = 22.sp,
+                        fontWeight = androidx.glance.text.FontWeight.Bold
                     )
-                } else {
-                    if (isSmall) {
-                        // 1x1 Layout: Minimal info (Time only)
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = DateUtils.getTimeRemaining(selectedEvent).split(" ").firstOrNull() ?: "0",
-                                style = TextStyle(color = ColorProvider(Color.White), fontSize = 14.sp)
-                            )
-                        }
-                    } else {
-                        // 4x1 / 2x2 Layout: Title + Time
-                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = selectedEvent.title,
-                                style = TextStyle(color = ColorProvider(Color.White), fontSize = 18.sp)
-                            )
-                            Text(
-                                text = DateUtils.getTimeRemaining(selectedEvent),
-                                style = TextStyle(color = ColorProvider(Color.White), fontSize = 24.sp)
-                            )
-                        }
+                )
+            }
+        }
+    }
+
+    @Composable
+    fun DetailedLayout(event: CountdownEvent) {
+        val breakdown = DateUtils.getFullBreakdown(event)
+        
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = androidx.glance.GlanceModifier.fillMaxSize()
+        ) {
+            Text(
+                text = event.title,
+                style = TextStyle(
+                    color = ColorProvider(Color.White), 
+                    fontSize = 18.sp,
+                    fontWeight = androidx.glance.text.FontWeight.Bold
+                ),
+                maxLines = 1
+            )
+            androidx.glance.layout.Spacer(modifier = androidx.glance.GlanceModifier.height(8.dp))
+            
+            androidx.glance.layout.Row(
+                verticalAlignment = Alignment.CenterVertically,
+                 horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                MetricItem(breakdown.first, "Days")
+                androidx.glance.layout.Spacer(modifier = androidx.glance.GlanceModifier.width(12.dp))
+                MetricItem(breakdown.second, "Hours")
+                androidx.glance.layout.Spacer(modifier = androidx.glance.GlanceModifier.width(12.dp))
+                MetricItem(breakdown.third, "Mins")
+            }
+        }
+    }
+    
+    @Composable
+    fun MetricItem(value: String, label: String) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+             Text(
+                text = value,
+                style = TextStyle(
+                    color = ColorProvider(Color.White), 
+                    fontSize = 20.sp, 
+                    fontWeight = androidx.glance.text.FontWeight.Bold
+                )
+            )
+             Text(
+                text = label,
+                style = TextStyle(color = ColorProvider(Color.LightGray), fontSize = 10.sp)
+            )
+        }
+    }
+
+    @Composable
+    fun ListLayout(events: List<CountdownEvent>) {
+        val sortedEvents = events.sortedBy { it.targetDate }
+        LazyColumn(modifier = androidx.glance.GlanceModifier.fillMaxSize()) {
+            items(sortedEvents) { event ->
+                 Column(
+                    modifier = androidx.glance.GlanceModifier.padding(vertical = 4.dp).fillMaxSize()
+                ) {
+                    androidx.glance.layout.Row(
+                        modifier = androidx.glance.GlanceModifier.fillMaxSize(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = event.title,
+                            style = TextStyle(color = ColorProvider(Color.White), fontSize = 14.sp),
+                            modifier = androidx.glance.GlanceModifier.defaultWeight()
+                        )
+                         Text(
+                            text = DateUtils.getDaysOnly(event) + "d",
+                            style = TextStyle(color = ColorProvider(Color.LightGray), fontSize = 12.sp)
+                        )
                     }
                 }
             }

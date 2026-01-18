@@ -96,7 +96,9 @@ fun WidgetConfigScreen(onEventSelected: (CountdownEvent) -> Unit) {
             items(events) { event ->
                 ListItem(
                     headlineContent = { Text(event.title) },
-                    supportingContent = { Text(event.targetDate.toString()) }, // Format this properly later
+                    supportingContent = { 
+                        Text(com.countdown.widgetproremain.util.DateUtils.formatTargetDate(event.targetDate)) 
+                    },
                     modifier = Modifier.clickable { onEventSelected(event) }
                 )
                 Divider()
