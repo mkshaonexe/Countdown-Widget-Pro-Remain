@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.glance.GlanceId
 import androidx.glance.GlanceTheme
 import androidx.glance.LocalSize
@@ -13,6 +14,7 @@ import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
+import androidx.glance.currentState
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
@@ -28,9 +30,12 @@ import kotlinx.coroutines.flow.firstOrNull
 import java.util.concurrent.TimeUnit
 import androidx.glance.appwidget.lazy.LazyColumn
 import androidx.glance.appwidget.lazy.items
+import androidx.glance.state.PreferencesGlanceStateDefinition
 
 
 class CountdownWidget : GlanceAppWidget() {
+
+    override val stateDefinition = PreferencesGlanceStateDefinition
 
     override val sizeMode: SizeMode = SizeMode.Responsive(
         setOf(
@@ -46,33 +51,43 @@ class CountdownWidget : GlanceAppWidget() {
         val HORIZONTAL_RECTANGLE = DpSize(150.dp, 50.dp)
         val BIG_SQUARE = DpSize(100.dp, 100.dp)
         val LIST_MODE = DpSize(100.dp, 180.dp)
+        
+        val PREF_EVENT_ID = intPreferencesKey("event_id")
     }
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val repository = (context.applicationContext as CountdownApplication).repository
-        // Get all events
+        // Fetch all events outside provideContent (suspend function)
         val events = repository.allEvents.firstOrNull() ?: emptyList()
-
+        
         provideContent {
+            val prefs = currentState<androidx.datastore.preferences.core.Preferences>()
+            val eventId = prefs[PREF_EVENT_ID]
+            
+            val selectedEvent = if (eventId != null) {
+                events.find { it.id == eventId }
+            } else {
+                // Default to nearest or first
+                 events.sortedBy { it.targetDate }.firstOrNull()
+            }
+
             GlanceTheme {
-                WidgetContent(events = events)
+                WidgetContent(events = events, selectedEvent = selectedEvent)
             }
         }
     }
 
     @Composable
-    fun WidgetContent(events: List<CountdownEvent>) {
+    fun WidgetContent(events: List<CountdownEvent>, selectedEvent: CountdownEvent?) {
         val size = LocalSize.current
-        val sortedEvents = events.sortedBy { it.targetDate }
-        val nearestEvent = sortedEvents.firstOrNull()
-
+        
         // Size logic
         val isSmall = size.width < 100.dp && size.height < 100.dp
         val isList = size.height >= 180.dp
         
-        // Background color based on nearest event (or neutral if list/empty)
-        val backgroundColor = if (nearestEvent != null && !isList) {
-            getUrgencyColor(nearestEvent.targetDate)
+        // Background color based on selected event (or neutral if list/empty)
+        val backgroundColor = if (selectedEvent != null && !isList) {
+            getUrgencyColor(selectedEvent.targetDate)
         } else if (isList && events.isNotEmpty()) {
              Color(0xFF263238) // Darker background for list
         } else {
@@ -86,14 +101,19 @@ class CountdownWidget : GlanceAppWidget() {
                 .padding(8.dp),
             contentAlignment = Alignment.Center
         ) {
-            if (events.isEmpty()) {
-                 Text(
-                    text = "No Events",
-                    style = TextStyle(color = ColorProvider(Color.White), fontSize = 12.sp)
-                )
-            } else {
-                if (isList) {
-                    // List Layout (Full Grid)
+            if (isList) {
+                // List Layout (Full Grid) - Shows ALL events still? 
+                // Using "Full Grid (4x3, 4x4): Multiple events in one widget" from PRD.
+                // So List mode should probably ignore the specific selection or default to list.
+                // If the user picked a specific event but resized to list, maybe highlight it? 
+                // For now, let's keep List showing all.
+                if (events.isEmpty()) {
+                     Text(
+                        text = "No Events",
+                        style = TextStyle(color = ColorProvider(Color.White), fontSize = 12.sp)
+                    )
+                } else {
+                    val sortedEvents = events.sortedBy { it.targetDate }
                     LazyColumn(modifier = androidx.glance.GlanceModifier.fillMaxSize()) {
                         items(sortedEvents) { event ->
                              Column(
@@ -110,25 +130,35 @@ class CountdownWidget : GlanceAppWidget() {
                             }
                         }
                     }
-                } else if (isSmall) {
-                    // 1x1 Layout: Minimal info (Time only)
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = DateUtils.getTimeRemaining(nearestEvent!!).split(" ").firstOrNull() ?: "0",
-                            style = TextStyle(color = ColorProvider(Color.White), fontSize = 14.sp)
-                        )
-                    }
+                }
+            } else {
+                // Single Event Modes
+                if (selectedEvent == null) {
+                    Text(
+                        text = "No Event",
+                        style = TextStyle(color = ColorProvider(Color.White), fontSize = 12.sp)
+                    )
                 } else {
-                    // 4x1 / 2x2 Layout: Title + Time (Nearest Event)
-                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = nearestEvent!!.title,
-                            style = TextStyle(color = ColorProvider(Color.White), fontSize = 18.sp)
-                        )
-                        Text(
-                            text = DateUtils.getTimeRemaining(nearestEvent),
-                            style = TextStyle(color = ColorProvider(Color.White), fontSize = 24.sp)
-                        )
+                    if (isSmall) {
+                        // 1x1 Layout: Minimal info (Time only)
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = DateUtils.getTimeRemaining(selectedEvent).split(" ").firstOrNull() ?: "0",
+                                style = TextStyle(color = ColorProvider(Color.White), fontSize = 14.sp)
+                            )
+                        }
+                    } else {
+                        // 4x1 / 2x2 Layout: Title + Time
+                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = selectedEvent.title,
+                                style = TextStyle(color = ColorProvider(Color.White), fontSize = 18.sp)
+                            )
+                            Text(
+                                text = DateUtils.getTimeRemaining(selectedEvent),
+                                style = TextStyle(color = ColorProvider(Color.White), fontSize = 24.sp)
+                            )
+                        }
                     }
                 }
             }
