@@ -26,6 +26,9 @@ import com.countdown.widgetproremain.data.model.CountdownEvent
 import com.countdown.widgetproremain.util.DateUtils
 import kotlinx.coroutines.flow.firstOrNull
 import java.util.concurrent.TimeUnit
+import androidx.glance.appwidget.lazy.LazyColumn
+import androidx.glance.appwidget.lazy.items
+
 
 class CountdownWidget : GlanceAppWidget() {
 
@@ -33,37 +36,45 @@ class CountdownWidget : GlanceAppWidget() {
         setOf(
             SMALL_SQUARE, // 1x1
             HORIZONTAL_RECTANGLE, // 4x1 or 2x1
-            BIG_SQUARE // 4x2+
+            BIG_SQUARE, // 2x2
+            LIST_MODE // 4x3+
         )
     )
 
     companion object {
         val SMALL_SQUARE = DpSize(50.dp, 50.dp)
-        val HORIZONTAL_RECTANGLE = DpSize(100.dp, 50.dp)
+        val HORIZONTAL_RECTANGLE = DpSize(150.dp, 50.dp)
         val BIG_SQUARE = DpSize(100.dp, 100.dp)
+        val LIST_MODE = DpSize(100.dp, 180.dp)
     }
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val repository = (context.applicationContext as CountdownApplication).repository
-        // Get the first event for now (simplification)
+        // Get all events
         val events = repository.allEvents.firstOrNull() ?: emptyList()
-        val nearestEvent = events.minByOrNull { it.targetDate }
 
         provideContent {
             GlanceTheme {
-                WidgetContent(event = nearestEvent)
+                WidgetContent(events = events)
             }
         }
     }
 
     @Composable
-    fun WidgetContent(event: CountdownEvent?) {
+    fun WidgetContent(events: List<CountdownEvent>) {
         val size = LocalSize.current
-        val isSmall = size.width < 100.dp && size.height < 100.dp
-        val isHorizontal = size.width >= 100.dp && size.height < 100.dp
+        val sortedEvents = events.sortedBy { it.targetDate }
+        val nearestEvent = sortedEvents.firstOrNull()
 
-        val backgroundColor = if (event != null) {
-            getUrgencyColor(event.targetDate)
+        // Size logic
+        val isSmall = size.width < 100.dp && size.height < 100.dp
+        val isList = size.height >= 180.dp
+        
+        // Background color based on nearest event (or neutral if list/empty)
+        val backgroundColor = if (nearestEvent != null && !isList) {
+            getUrgencyColor(nearestEvent.targetDate)
+        } else if (isList && events.isNotEmpty()) {
+             Color(0xFF263238) // Darker background for list
         } else {
             Color.DarkGray
         }
@@ -75,45 +86,51 @@ class CountdownWidget : GlanceAppWidget() {
                 .padding(8.dp),
             contentAlignment = Alignment.Center
         ) {
-            if (event != null) {
-                if (isSmall) {
-                    // 1x1 Layout: Minimal info
+            if (events.isEmpty()) {
+                 Text(
+                    text = "No Events",
+                    style = TextStyle(color = ColorProvider(Color.White), fontSize = 12.sp)
+                )
+            } else {
+                if (isList) {
+                    // List Layout (Full Grid)
+                    LazyColumn(modifier = androidx.glance.GlanceModifier.fillMaxSize()) {
+                        items(sortedEvents) { event ->
+                             Column(
+                                modifier = androidx.glance.GlanceModifier.padding(vertical = 4.dp).fillMaxSize()
+                            ) {
+                                Text(
+                                    text = event.title,
+                                    style = TextStyle(color = ColorProvider(Color.White), fontSize = 14.sp)
+                                )
+                                Text(
+                                    text = DateUtils.getTimeRemaining(event),
+                                    style = TextStyle(color = ColorProvider(Color.LightGray), fontSize = 12.sp)
+                                )
+                            }
+                        }
+                    }
+                } else if (isSmall) {
+                    // 1x1 Layout: Minimal info (Time only)
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = DateUtils.getTimeRemaining(event).split(" ").firstOrNull() ?: "0",
+                            text = DateUtils.getTimeRemaining(nearestEvent!!).split(" ").firstOrNull() ?: "0",
                             style = TextStyle(color = ColorProvider(Color.White), fontSize = 14.sp)
-                        )
-                    }
-                } else if (isHorizontal) {
-                    // 4x1 / 2x1 Layout: Title + Time
-                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = event.title,
-                            style = TextStyle(color = ColorProvider(Color.White), fontSize = 14.sp)
-                        )
-                        Text(
-                            text = DateUtils.getTimeRemaining(event),
-                            style = TextStyle(color = ColorProvider(Color.White), fontSize = 18.sp)
                         )
                     }
                 } else {
-                    // Default / Large Layout
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    // 4x1 / 2x2 Layout: Title + Time (Nearest Event)
+                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = event.title,
+                            text = nearestEvent!!.title,
                             style = TextStyle(color = ColorProvider(Color.White), fontSize = 18.sp)
                         )
                         Text(
-                            text = DateUtils.getTimeRemaining(event),
+                            text = DateUtils.getTimeRemaining(nearestEvent),
                             style = TextStyle(color = ColorProvider(Color.White), fontSize = 24.sp)
                         )
                     }
                 }
-            } else {
-                Text(
-                    text = "No Events",
-                    style = TextStyle(color = ColorProvider(Color.White), fontSize = 12.sp)
-                )
             }
         }
     }
