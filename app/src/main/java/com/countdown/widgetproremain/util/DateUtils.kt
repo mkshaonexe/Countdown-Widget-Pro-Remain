@@ -115,6 +115,26 @@ object DateUtils {
         return Triple(days.toString(), hours.toString(), minutes.toString())
     }
 
+    fun getSecondsOnly(event: com.countdown.widgetproremain.data.model.CountdownEvent): String {
+        val now = LocalDateTime.now()
+        val target = getDisplayDate(event)
+
+        val start = if (event.isCountUp) target else now
+        val end = if (event.isCountUp) now else target
+
+        if (start.isAfter(end)) return "0"
+
+        val days = ChronoUnit.DAYS.between(start, end)
+        val tempDate = start.plusDays(days)
+        val hours = ChronoUnit.HOURS.between(tempDate, end)
+        val tempDate2 = tempDate.plusHours(hours)
+        val minutes = ChronoUnit.MINUTES.between(tempDate2, end)
+        val tempDate3 = tempDate2.plusMinutes(minutes)
+        val seconds = ChronoUnit.SECONDS.between(tempDate3, end)
+        
+        return seconds.toString()
+    }
+
     // Keep the old method for compatibility if needed, or remove it. 
     // The widget uses the old method signature: getTimeRemaining(Long)
     // We should update the widget to use the new one.

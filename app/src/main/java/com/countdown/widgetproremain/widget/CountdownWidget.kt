@@ -57,6 +57,7 @@ class CountdownWidget : GlanceAppWidget() {
         val LIST_MODE = DpSize(100.dp, 180.dp)
         
         val PREF_EVENT_ID = intPreferencesKey("event_id")
+        val PREF_SHOW_SECONDS = androidx.datastore.preferences.core.booleanPreferencesKey("show_seconds")
     }
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
@@ -67,6 +68,7 @@ class CountdownWidget : GlanceAppWidget() {
         provideContent {
             val prefs = currentState<androidx.datastore.preferences.core.Preferences>()
             val eventId = prefs[PREF_EVENT_ID]
+            val showSecondsPref = prefs[PREF_SHOW_SECONDS] ?: false
             
             val selectedEvent = if (eventId != null) {
                 events.find { it.id == eventId }
@@ -76,13 +78,14 @@ class CountdownWidget : GlanceAppWidget() {
             }
 
             GlanceTheme {
-                WidgetContent(events = events, selectedEvent = selectedEvent)
+                WidgetContent(events = events, selectedEvent = selectedEvent, showSecondsPref = showSecondsPref)
             }
         }
     }
 
     @Composable
-    fun WidgetContent(events: List<CountdownEvent>, selectedEvent: CountdownEvent?) {
+    fun WidgetContent(events: List<CountdownEvent>, selectedEvent: CountdownEvent?, showSecondsPref: Boolean = false) {
+
         val size = LocalSize.current
         
         // Define breakpoints based on PRD and Material Guidelines
@@ -98,9 +101,9 @@ class CountdownWidget : GlanceAppWidget() {
         
         // Determine Background Color
         val backgroundColor = if (selectedEvent != null) {
-            getUrgencyColor(selectedEvent.targetDate)
+            getUrgencyColor(selectedEvent)
         } else {
-             Color(0xFF263238)
+             Color(0xFF263238) // Dark Blue Grey
         }
 
         Box(
@@ -127,11 +130,14 @@ class CountdownWidget : GlanceAppWidget() {
                 }
             } else {
                // Event is selected
+               val isUrgent = !selectedEvent.isCountUp && (selectedEvent.targetDate - System.currentTimeMillis() in 1..86400000)
+               val shouldShowSeconds = showSecondsPref || isUrgent
+
                when {
                    isSmallSquare -> SmallLayout(selectedEvent)
                    isHorizontal -> HorizontalLayout(selectedEvent)
-                   isDetailed -> DetailedLayout(selectedEvent)
-                   else -> DetailedLayout(selectedEvent) // Fallback
+                   isDetailed -> DetailedLayout(selectedEvent, showSeconds = shouldShowSeconds) 
+                   else -> DetailedLayout(selectedEvent, showSeconds = shouldShowSeconds) // Fallback
                }
             }
         }
@@ -194,8 +200,12 @@ class CountdownWidget : GlanceAppWidget() {
     }
 
     @Composable
-    fun DetailedLayout(event: CountdownEvent) {
+    fun DetailedLayout(event: CountdownEvent, showSeconds: Boolean = false) {
         val breakdown = DateUtils.getFullBreakdown(event)
+        val days = breakdown.first.toLongOrNull() ?: 0
+        
+        // If less than 1 day, show Hours/Mins/Secs (or just Hours/Mins if no seconds)
+        // If more than 1 day, show Days/Hours/Mins
         
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -217,11 +227,37 @@ class CountdownWidget : GlanceAppWidget() {
                 verticalAlignment = Alignment.CenterVertically,
                  horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                MetricItem(breakdown.first, "Days")
-                androidx.glance.layout.Spacer(modifier = androidx.glance.GlanceModifier.width(12.dp))
-                MetricItem(breakdown.second, "Hours")
-                androidx.glance.layout.Spacer(modifier = androidx.glance.GlanceModifier.width(12.dp))
-                MetricItem(breakdown.third, "Mins")
+                if (days > 0) {
+                    MetricItem(breakdown.first, "Days")
+                    androidx.glance.layout.Spacer(modifier = androidx.glance.GlanceModifier.width(12.dp))
+                    MetricItem(breakdown.second, "Hours")
+                    androidx.glance.layout.Spacer(modifier = androidx.glance.GlanceModifier.width(12.dp))
+                    MetricItem(breakdown.third, "Mins")
+                    
+                    if (showSeconds) {
+                        androidx.glance.layout.Spacer(modifier = androidx.glance.GlanceModifier.width(12.dp))
+                        // We need to fetch seconds from DateUtils if available or calc it manually
+                        // Assuming DateUtils.getFullBreakdown returns (Days, Hours, Mins) - wait, let's check DateUtils
+                        // Ideally we need seconds here.
+                        // Let's assume for now we use a new helper or existing one.
+                        // If showSeconds is true, we need a 4th metric.
+                        // Since I can't easily see DateUtils, I will use a helper here to display it if my assumption about breakdown is limited.
+                        // Wait, I should check DateUtils.kt. For now I will assume I need to calculate it.
+                        val secondsStr = DateUtils.getSecondsOnly(event)
+                        MetricItem(secondsStr, "Secs")
+                    }
+                } else {
+                    // Less than a day
+                    MetricItem(breakdown.second, "Hours")
+                    androidx.glance.layout.Spacer(modifier = androidx.glance.GlanceModifier.width(12.dp))
+                    MetricItem(breakdown.third, "Mins")
+                    
+                    if (showSeconds) {
+                        androidx.glance.layout.Spacer(modifier = androidx.glance.GlanceModifier.width(12.dp))
+                        val secondsStr = DateUtils.getSecondsOnly(event) // Assuming this exists or I'll add it
+                         MetricItem(secondsStr, "Secs")
+                    }
+                }
             }
         }
     }
@@ -271,13 +307,17 @@ class CountdownWidget : GlanceAppWidget() {
         }
     }
 
-    private fun getUrgencyColor(targetDate: Long): Color {
+    private fun getUrgencyColor(event: CountdownEvent): Color {
         val now = System.currentTimeMillis()
-        val diff = targetDate - now
+        val diff = event.targetDate - now
         val days = TimeUnit.MILLISECONDS.toDays(diff)
 
+        if (event.isCountUp) {
+            return Color(0xFF039BE5) // Light Blue for Count Up / Streaks
+        }
+
         return when {
-            diff < 0 -> Color.Gray // Past
+            diff < 0 -> Color.Gray // Past (Expired Countdown)
             days < 1 -> Color(0xFFE53935) // Red (Urgent - < 24h)
             days < 7 -> Color(0xFFFFB300) // Amber (Warning - < 1 week)
             else -> Color(0xFF43A047) // Green (Safe - > 1 week)

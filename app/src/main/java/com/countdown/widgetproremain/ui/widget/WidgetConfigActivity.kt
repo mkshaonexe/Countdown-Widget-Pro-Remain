@@ -54,14 +54,14 @@ class WidgetConfigActivity : ComponentActivity() {
 
         setContent {
             WidgetConfigScreen(
-                onEventSelected = { event ->
-                    saveWidgetState(event)
+                onEventSelected = { event, showSeconds ->
+                    saveWidgetState(event, showSeconds)
                 }
             )
         }
     }
 
-    private fun saveWidgetState(event: CountdownEvent) {
+    private fun saveWidgetState(event: CountdownEvent, showSeconds: Boolean) {
         val context = this
         val coroutineScope = lifecycleScope
         
@@ -71,6 +71,7 @@ class WidgetConfigActivity : ComponentActivity() {
             updateAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId) { prefs ->
                 prefs.toMutablePreferences().apply {
                     this[CountdownWidget.PREF_EVENT_ID] = event.id
+                    this[CountdownWidget.PREF_SHOW_SECONDS] = showSeconds
                 }
             }
             CountdownWidget().update(context, glanceId)
@@ -84,13 +85,27 @@ class WidgetConfigActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WidgetConfigScreen(onEventSelected: (CountdownEvent) -> Unit) {
+fun WidgetConfigScreen(onEventSelected: (CountdownEvent, Boolean) -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val repository = (context.applicationContext as CountdownApplication).repository
     val events by repository.allEvents.collectAsState(initial = emptyList())
+    var showSeconds by remember { mutableStateOf(false) }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Select Event for Widget") }) }
+        topBar = { TopAppBar(title = { Text("Select Event for Widget") }) },
+        bottomBar = {
+            Surface(tonalElevation = 8.dp) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    Text("Show Seconds (Precise Mode)", modifier = Modifier.weight(1f))
+                    Switch(checked = showSeconds, onCheckedChange = { showSeconds = it })
+                }
+            }
+        }
     ) { padding ->
         LazyColumn(modifier = Modifier.padding(padding)) {
             items(events) { event ->
@@ -99,7 +114,7 @@ fun WidgetConfigScreen(onEventSelected: (CountdownEvent) -> Unit) {
                     supportingContent = { 
                         Text(com.countdown.widgetproremain.util.DateUtils.formatTargetDate(event.targetDate)) 
                     },
-                    modifier = Modifier.clickable { onEventSelected(event) }
+                    modifier = Modifier.clickable { onEventSelected(event, showSeconds) }
                 )
                 Divider()
             }
