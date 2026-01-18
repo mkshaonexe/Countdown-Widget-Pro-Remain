@@ -6,7 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.countdown.widgetproremain.data.model.CountdownEvent
 
-@Database(entities = [CountdownEvent::class], version = 1, exportSchema = false)
+@Database(entities = [CountdownEvent::class], version = 2, exportSchema = false)
 abstract class CountdownDatabase : RoomDatabase() {
     abstract fun countdownDao(): CountdownDao
 

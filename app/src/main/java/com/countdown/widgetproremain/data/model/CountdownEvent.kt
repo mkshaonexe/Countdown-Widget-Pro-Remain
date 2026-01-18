@@ -11,6 +11,9 @@ data class CountdownEvent(
     val title: String,
     val targetDate: Long, // Epoch millis
     val isAllDay: Boolean = false,
+    val includeTime: Boolean = false,
+    val isCountUp: Boolean = false,
+    val recurrence: String = "NONE", // NONE, DAILY, WEEKLY, MONTHLY, YEARLY
     val color: Int, // ARGB
     val notes: String? = null,
     val createdAt: Long = System.currentTimeMillis(),

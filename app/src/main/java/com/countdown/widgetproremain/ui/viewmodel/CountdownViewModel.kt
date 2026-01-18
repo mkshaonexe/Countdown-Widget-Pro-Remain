@@ -19,13 +19,26 @@ class CountdownViewModel(private val repository: CountdownRepository) : ViewMode
             initialValue = emptyList()
         )
 
-    fun addEvent(title: String, targetDate: Long, isAllDay: Boolean, color: Int, notes: String?, isPinned: Boolean) {
+    fun addEvent(
+        title: String,
+        targetDate: Long,
+        isAllDay: Boolean,
+        includeTime: Boolean,
+        isCountUp: Boolean,
+        recurrence: String,
+        color: Int,
+        notes: String?,
+        isPinned: Boolean
+    ) {
         viewModelScope.launch {
             repository.insertEvent(
                 CountdownEvent(
                     title = title,
                     targetDate = targetDate,
                     isAllDay = isAllDay,
+                    includeTime = includeTime,
+                    isCountUp = isCountUp,
+                    recurrence = recurrence,
                     color = color,
                     notes = notes,
                     isPinned = isPinned
