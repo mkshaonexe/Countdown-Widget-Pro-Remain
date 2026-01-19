@@ -4,6 +4,7 @@
 
     <!-- Permission for future calendar import feature (Phase 3) -->
     <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".CountdownApplication"

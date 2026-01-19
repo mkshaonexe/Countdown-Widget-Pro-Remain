@@ -25,6 +25,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val appContainer = (application as CountdownApplication)
+
+        // Request Notification Permission for Android 13+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+             androidx.core.app.ActivityCompat.requestPermissions(
+                 this,
+                 arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                 101
+             )
+        }
         
         setContent {
             CountdownWidgetProRemainTheme {
