@@ -103,6 +103,12 @@ class CountdownViewModel(private val repository: CountdownRepository) : ViewMode
         }
     }
 
+    fun insert(event: CountdownEvent) {
+        viewModelScope.launch {
+            repository.insertEvent(event)
+        }
+    }
+
     fun deleteEvent(event: CountdownEvent) {
         viewModelScope.launch {
             repository.deleteEvent(event)

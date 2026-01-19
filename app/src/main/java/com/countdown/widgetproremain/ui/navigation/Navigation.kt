@@ -12,6 +12,7 @@ import com.countdown.widgetproremain.ui.addedit.AddEditScreen
 sealed class Screen(val route: String) {
     data object Home : Screen("home")
     data object AddEdit : Screen("add_edit")
+    data object Import : Screen("import")
 }
 
 @Composable
@@ -28,13 +29,20 @@ fun CountdownNavHost(
         composable(Screen.Home.route) {
             HomeScreen(
                 viewModel = viewModel,
-                onAddEventConfig = { navController.navigate(Screen.AddEdit.route) }
+                onAddEventConfig = { navController.navigate(Screen.AddEdit.route) },
+                onImportEvent = { navController.navigate(Screen.Import.route) }
             )
         }
         composable(Screen.AddEdit.route) {
             AddEditScreen(
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        composable(Screen.Import.route) {
+            com.countdown.widgetproremain.ui.import.ImportEventScreen(
+                navController = navController,
+                viewModel = viewModel
             )
         }
     }

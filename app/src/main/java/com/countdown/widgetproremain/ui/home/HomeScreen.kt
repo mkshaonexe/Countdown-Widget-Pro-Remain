@@ -26,7 +26,8 @@ import com.countdown.widgetproremain.util.DateUtils
 @Composable
 fun HomeScreen(
     viewModel: CountdownViewModel,
-    onAddEventConfig: () -> Unit
+    onAddEventConfig: () -> Unit,
+    onImportEvent: () -> Unit
 ) {
     val events by viewModel.filteredAndSortedEvents.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
@@ -56,6 +57,14 @@ fun HomeScreen(
                                 expanded = showSortMenu,
                                 onDismissRequest = { showSortMenu = false }
                             ) {
+                                DropdownMenuItem(
+                                    text = { Text("Import from Calendar") },
+                                    onClick = {
+                                        onImportEvent()
+                                        showSortMenu = false
+                                    }
+                                )
+                                HorizontalDivider()
                                 DropdownMenuItem(
                                     text = { Text("Soonest") },
                                     onClick = {
