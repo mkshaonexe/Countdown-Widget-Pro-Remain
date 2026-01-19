@@ -4,6 +4,21 @@ import android.app.Application
 import com.countdown.widgetproremain.data.local.CountdownDatabase
 import com.countdown.widgetproremain.data.repository.CountdownRepository
 
+/**
+ * Main Application class for Countdown Widget Pro Remain
+ * 
+ * Responsibilities:
+ * - Initialize Room database and repository
+ * - Create notification channels for milestone alerts and sticky notifications
+ * - Schedule periodic WorkManager tasks for widget updates and notifications
+ * 
+ * This class follows the singleton pattern, providing lazy-initialized
+ * database and repository instances accessible throughout the app lifecycle.
+ * 
+ * @see CountdownDatabase
+ * @see CountdownRepository
+ * @see com.countdown.widgetproremain.worker.CountdownWorker
+ */
 class CountdownApplication : Application() {
     val database by lazy { CountdownDatabase.getDatabase(this) }
     val repository by lazy { CountdownRepository(database.countdownDao()) }

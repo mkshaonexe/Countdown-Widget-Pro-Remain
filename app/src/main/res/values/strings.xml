@@ -1,3 +1,116 @@
 <resources>
+    <!-- App Name -->
     <string name="app_name">Countdown Widget Pro – Remain</string>
+    <string name="widget_description">Smart countdown widget with urgency colors and multiple layouts</string>
+    
+    <!-- Home Screen -->
+    <string name="home_title">Countdowns</string>
+    <string name="search_events">Search events…</string>
+    <string name="no_countdowns_title">No countdowns yet</string>
+    <string name="no_countdowns_subtitle">Tap + to create your first countdown</string>
+    <string name="add_event">Add Event</string>
+    <string name="delete_event">Delete</string>
+    
+    <!-- Sort Options -->
+    <string name="sort_soonest">Soonest</string>
+    <string name="sort_alphabetical">Alphabetical</string>
+    <string name="sort_created_date">Created Date</string>
+    
+    <!-- Add/Edit Event -->
+    <string name="event_title">Event Title</string>
+    <string name="target_date">Target Date</string>
+    <string name="target_time">Target Time</string>
+    <string name="select_date">Select Date</string>
+    <string name="select_time">Select Time</string>
+    <string name="save_event">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="count_up_mode">Count Up (Track Streak)</string>
+    <string name="include_time">Include Time</string>
+    <string name="all_day_event">All Day Event</string>
+    <string name="event_color">Event Color</string>
+    <string name="notes">Notes (Optional)</string>
+    
+    <!-- Recurrence -->
+    <string name="recurrence_none">No Repeat</string>
+    <string name="recurrence_daily">Daily</string>
+    <string name="recurrence_weekly">Weekly</string>
+    <string name="recurrence_monthly">Monthly</string>
+    <string name="recurrence_yearly">Yearly</string>
+    
+    <!-- Import Calendar -->
+    <string name="import_calendar_title">Import from Calendar</string>
+    <string name="import_calendar_description">Select events to import</string>
+    <string name="permission_required">Calendar Permission Required</string>
+    <string name="permission_rationale">This app needs calendar permission to import events</string>
+    <string name="grant_permission">Grant Permission</string>
+    <string name="no_calendar_events">No upcoming calendar events found</string>
+    
+    <!-- Widget Configuration -->
+    <string name="widget_config_title">Configure Widget</string>
+    <string name="select_event">Select Event</string>
+    <string name="show_seconds">Show Seconds</string>
+    <string name="smart_colors">Smart Colors (Urgency Mode)</string>
+    <string name="smart_colors_description">Widget changes color based on time remaining</string>
+    <string name="apply_widget">Apply</string>
+    
+    <!-- Widget Content -->
+    <string name="widget_no_events">No Events</string>
+    <string name="widget_select_event">Select Event</string>
+    <string name="days_label">DAYS</string>
+    <string name="hours_label">Hours</string>
+    <string name="minutes_label">Mins</string>
+    <string name="seconds_label">Secs</string>
+    
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="data_management">Data Management</string>
+    <string name="export_events">Export All Events</string>
+    <string name="export_events_description">Save your events to a JSON file</string>
+    <string name="import_events">Import Events</string>
+    <string name="import_events_description">Restore events from a backup file</string>
+    <string name="about_section">About</string>
+    <string name="version">Version</string>
+    <string name="build_number">Build Number: %d</string>
+    
+    <!-- Backup/Restore -->
+    <string name="export_success">Export Successful</string>
+    <string name="export_success_message">Successfully exported %d event(s).</string>
+    <string name="import_success">Import Successful</string>
+    <string name="import_success_message">Successfully imported %d event(s).</string>
+    <string name="backup_error">Error</string>
+    <string name="invalid_backup_file">Invalid backup file format</string>
+    
+    <!-- Notifications -->
+    <string name="channel_alerts_name">Milestone Alerts</string>
+    <string name="channel_alerts_description">Notifications for event milestones (1 day left, etc.)</string>
+    <string name="channel_sticky_name">Ongoing Countdowns</string>
+    <string name="channel_sticky_description">Persistent notification for the most urgent event</string>
+    
+    <string name="notification_title">Countdown Alert: %s</string>
+    <string name="notification_message">%s remaining for %s</string>
+    <string name="milestone_30_days">30 Days</string>
+    <string name="milestone_7_days">1 Week</string>
+    <string name="milestone_1_day">1 Day</string>
+    <string name="milestone_1_hour">1 Hour</string>
+    <string name="milestone_now">It\'s Time!</string>
+    
+    <!-- Time Formatting -->
+    <string name="time_days_short">%dd</string>
+    <string name="time_hours_short">%dh</string>
+    <string name="time_minutes_short">%dm</string>
+    <string name="time_seconds_short">%ds</string>
+    
+    <!-- Errors -->
+    <string name="error_title_required">Event title is required</string>
+    <string name="error_date_required">Target date is required</string>
+    <string name="error_permission_denied">Permission denied. Cannot import calendar events.</string>
+    <string name="error_backup_failed">Failed to create backup</string>
+    <string name="error_restore_failed">Failed to restore from backup</string>
+    
+    <!-- General -->
+    <string name="ok">OK</string>
+    <string name="back">Back</string>
+    <string name="search">Search</string>
+    <string name="settings">Settings</string>
+    <string name="more_options">More Options</string>
 </resources>
