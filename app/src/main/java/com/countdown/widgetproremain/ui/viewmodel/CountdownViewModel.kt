@@ -114,7 +114,72 @@ class CountdownViewModel(private val repository: CountdownRepository) : ViewMode
             repository.deleteEvent(event)
         }
     }
+    
+    // Backup/Restore functionality
+    private val _backupState = MutableStateFlow<BackupState>(BackupState.Idle)
+    val backupState: StateFlow<BackupState> = _backupState
+    
+    /**
+     * Export all events to JSON string for backup
+     * @return JSON string containing all events
+     */
+    suspend fun exportToBackup(): Result<String> {
+        return try {
+            _backupState.value = BackupState.Exporting
+            val events = repository.exportAllEvents()
+            val jsonString = com.countdown.widgetproremain.util.BackupManager.exportToJson(events)
+            _backupState.value = BackupState.ExportSuccess(events.size)
+            Result.success(jsonString)
+        } catch (e: Exception) {
+            _backupState.value = BackupState.Error(e.message ?: "Export failed")
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Import events from JSON backup string
+     * @param jsonString JSON backup string
+     * @param clearExisting If true, deletes all existing events before import
+     * @return Result with count of imported events or error
+     */
+    fun importFromBackup(jsonString: String, clearExisting: Boolean = false) {
+        viewModelScope.launch {
+            try {
+                _backupState.value = BackupState.Importing
+                val result = com.countdown.widgetproremain.util.BackupManager.importFromJson(jsonString)
+                
+                result.onSuccess { events ->
+                    val importedCount = repository.importEvents(events, clearExisting)
+                    _backupState.value = BackupState.ImportSuccess(importedCount)
+                }.onFailure { error ->
+                    _backupState.value = BackupState.Error(error.message ?: "Import failed")
+                }
+            } catch (e: Exception) {
+                _backupState.value = BackupState.Error(e.message ?: "Import failed")
+            }
+        }
+    }
+    
+    /**
+     * Reset backup state to idle
+     */
+    fun resetBackupState() {
+        _backupState.value = BackupState.Idle
+    }
 }
+
+/**
+ * Sealed class representing backup/restore states
+ */
+sealed class BackupState {
+    object Idle : BackupState()
+    object Exporting : BackupState()
+    data class ExportSuccess(val eventCount: Int) : BackupState()
+    object Importing : BackupState()
+    data class ImportSuccess(val eventCount: Int) : BackupState()
+    data class Error(val message: String) : BackupState()
+}
+
 
 class CountdownViewModelFactory(private val repository: CountdownRepository) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {

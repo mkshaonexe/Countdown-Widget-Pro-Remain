@@ -9,13 +9,25 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
+// OLED-optimized dark theme with pure black backgrounds
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
     secondary = PurpleGrey80,
-    tertiary = Pink80
+    tertiary = Pink80,
+    background = Color(0xFF000000), // Pure black for OLED
+    surface = Color(0xFF0A0A0A), // Near-black for subtle depth
+    surfaceVariant = Color(0xFF1A1A1A), // Slightly lighter for cards
+    onPrimary = Color(0xFF000000),
+    onSecondary = Color(0xFF000000),
+    onTertiary = Color(0xFF000000),
+    onBackground = Color(0xFFE1E1E1), // High contrast text
+    onSurface = Color(0xFFE1E1E1), // High contrast text
+    onSurfaceVariant = Color(0xFFB0B0B0) // Muted text for secondary content
 )
+
 
 private val LightColorScheme = lightColorScheme(
     primary = Purple40,

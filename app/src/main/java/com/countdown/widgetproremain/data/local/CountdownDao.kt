@@ -13,16 +13,26 @@ import kotlinx.coroutines.flow.Flow
 interface CountdownDao {
     @Query("SELECT * FROM countdown_events ORDER BY targetDate ASC")
     fun getAllEvents(): Flow<List<CountdownEvent>>
+    
+    @Query("SELECT * FROM countdown_events ORDER BY targetDate ASC")
+    suspend fun getAllEventsSync(): List<CountdownEvent>
 
     @Query("SELECT * FROM countdown_events WHERE id = :id")
     fun getEventById(id: Int): Flow<CountdownEvent>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertEvent(event: CountdownEvent)
+    
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(events: List<CountdownEvent>)
 
     @Update
     suspend fun updateEvent(event: CountdownEvent)
 
     @Delete
     suspend fun deleteEvent(event: CountdownEvent)
+    
+    @Query("DELETE FROM countdown_events")
+    suspend fun deleteAllEvents()
 }
+

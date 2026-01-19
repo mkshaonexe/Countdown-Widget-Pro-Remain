@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,7 +28,8 @@ import com.countdown.widgetproremain.util.DateUtils
 fun HomeScreen(
     viewModel: CountdownViewModel,
     onAddEventConfig: () -> Unit,
-    onImportEvent: () -> Unit
+    onImportEvent: () -> Unit,
+    onSettings: () -> Unit
 ) {
     val events by viewModel.filteredAndSortedEvents.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
@@ -57,6 +59,15 @@ fun HomeScreen(
                                 expanded = showSortMenu,
                                 onDismissRequest = { showSortMenu = false }
                             ) {
+                                DropdownMenuItem(
+                                    text = { Text("Settings") },
+                                    onClick = {
+                                        onSettings()
+                                        showSortMenu = false
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.Settings, contentDescription = null) }
+                                )
+                                HorizontalDivider()
                                 DropdownMenuItem(
                                     text = { Text("Import from Calendar") },
                                     onClick = {
@@ -131,7 +142,25 @@ fun HomeScreen(
                     .padding(innerPadding),
                 contentAlignment = Alignment.Center
             ) {
-                Text("No countdowns yet. Add one!")
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "🎯",
+                        style = MaterialTheme.typography.displayLarge
+                    )
+                    Text(
+                        text = "No countdowns yet",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = "Tap + to create your first countdown",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         } else {
             LazyColumn(
@@ -141,11 +170,20 @@ fun HomeScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(events) { event ->
-                    CountdownItem(
-                        event = event,
-                        onDelete = { viewModel.deleteEvent(event) }
-                    )
+                items(
+                    items = events,
+                    key = { it.id }
+                ) { event ->
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = true,
+                        enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.expandVertically(),
+                        exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.shrinkVertically()
+                    ) {
+                        CountdownItem(
+                            event = event,
+                            onDelete = { viewModel.deleteEvent(event) }
+                        )
+                    }
                 }
             }
         }
