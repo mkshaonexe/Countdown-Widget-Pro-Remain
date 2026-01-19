@@ -27,6 +27,7 @@ import androidx.glance.layout.width
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
+import androidx.glance.LocalContext
 import com.countdown.widgetproremain.CountdownApplication
 import com.countdown.widgetproremain.data.model.CountdownEvent
 import com.countdown.widgetproremain.util.DateUtils
@@ -58,6 +59,7 @@ class CountdownWidget : GlanceAppWidget() {
         
         val PREF_EVENT_ID = intPreferencesKey("event_id")
         val PREF_SHOW_SECONDS = androidx.datastore.preferences.core.booleanPreferencesKey("show_seconds")
+        val PREF_USE_SMART_COLORS = androidx.datastore.preferences.core.booleanPreferencesKey("use_smart_colors")
     }
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
@@ -69,6 +71,7 @@ class CountdownWidget : GlanceAppWidget() {
             val prefs = currentState<androidx.datastore.preferences.core.Preferences>()
             val eventId = prefs[PREF_EVENT_ID]
             val showSecondsPref = prefs[PREF_SHOW_SECONDS] ?: false
+            val useSmartColors = prefs[PREF_USE_SMART_COLORS] ?: true // Default to true
             
             val selectedEvent = if (eventId != null) {
                 events.find { it.id == eventId }
@@ -78,13 +81,13 @@ class CountdownWidget : GlanceAppWidget() {
             }
 
             GlanceTheme {
-                WidgetContent(events = events, selectedEvent = selectedEvent, showSecondsPref = showSecondsPref)
+                WidgetContent(events = events, selectedEvent = selectedEvent, showSecondsPref = showSecondsPref, useSmartColors = useSmartColors)
             }
         }
     }
 
     @Composable
-    fun WidgetContent(events: List<CountdownEvent>, selectedEvent: CountdownEvent?, showSecondsPref: Boolean = false) {
+    fun WidgetContent(events: List<CountdownEvent>, selectedEvent: CountdownEvent?, showSecondsPref: Boolean = false, useSmartColors: Boolean = true) {
 
         val size = LocalSize.current
         
@@ -92,8 +95,6 @@ class CountdownWidget : GlanceAppWidget() {
         // 1x1: < 100dp width/height
         // 2x1 / 4x1 (Horizontal): height < 100dp, width >= 100dp
         // 4x2 (Detailed): height >= 100dp, width >= 150dp
-        // List: height >= 180dp (or larger specific mode) or forcing list mode?
-        // Let's rely on size since user resizing determines the intent mostly.
         
         val isSmallSquare = size.width < 100.dp && size.height < 100.dp
         val isHorizontal = size.height < 100.dp && size.width >= 100.dp
@@ -101,7 +102,11 @@ class CountdownWidget : GlanceAppWidget() {
         
         // Determine Background Color
         val backgroundColor = if (selectedEvent != null) {
-            getUrgencyColor(selectedEvent)
+            if (useSmartColors) {
+                 getUrgencyColor(selectedEvent)
+            } else {
+                GlanceTheme.colors.primaryContainer.getColor(LocalContext.current)
+            }
         } else {
              Color(0xFF263238) // Dark Blue Grey
         }

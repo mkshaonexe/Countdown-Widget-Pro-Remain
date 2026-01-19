@@ -54,14 +54,14 @@ class WidgetConfigActivity : ComponentActivity() {
 
         setContent {
             WidgetConfigScreen(
-                onEventSelected = { event, showSeconds ->
-                    saveWidgetState(event, showSeconds)
+                onEventSelected = { event, showSeconds, useSmartColors ->
+                    saveWidgetState(event, showSeconds, useSmartColors)
                 }
             )
         }
     }
 
-    private fun saveWidgetState(event: CountdownEvent, showSeconds: Boolean) {
+    private fun saveWidgetState(event: CountdownEvent, showSeconds: Boolean, useSmartColors: Boolean) {
         val context = this
         val coroutineScope = lifecycleScope
         
@@ -72,6 +72,7 @@ class WidgetConfigActivity : ComponentActivity() {
                 prefs.toMutablePreferences().apply {
                     this[CountdownWidget.PREF_EVENT_ID] = event.id
                     this[CountdownWidget.PREF_SHOW_SECONDS] = showSeconds
+                    this[CountdownWidget.PREF_USE_SMART_COLORS] = useSmartColors
                 }
             }
             CountdownWidget().update(context, glanceId)
@@ -85,24 +86,40 @@ class WidgetConfigActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WidgetConfigScreen(onEventSelected: (CountdownEvent, Boolean) -> Unit) {
+fun WidgetConfigScreen(onEventSelected: (CountdownEvent, Boolean, Boolean) -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val repository = (context.applicationContext as CountdownApplication).repository
     val events by repository.allEvents.collectAsState(initial = emptyList())
     var showSeconds by remember { mutableStateOf(false) }
+    var useSmartColors by remember { mutableStateOf(true) }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Select Event for Widget") }) },
         bottomBar = {
             Surface(tonalElevation = 8.dp) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                ) {
-                    Text("Show Seconds (Precise Mode)", modifier = Modifier.weight(1f))
-                    Switch(checked = showSeconds, onCheckedChange = { showSeconds = it })
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Smart Colors")
+                            Text("Green/Yellow/Red based on urgency", style = MaterialTheme.typography.bodySmall)
+                        }
+                        Switch(checked = useSmartColors, onCheckedChange = { useSmartColors = it })
+                    }
+                    HorizontalDivider()
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                    ) {
+                        Text("Show Seconds (Precise Mode)", modifier = Modifier.weight(1f))
+                        Switch(checked = showSeconds, onCheckedChange = { showSeconds = it })
+                    }
                 }
             }
         }
@@ -114,9 +131,9 @@ fun WidgetConfigScreen(onEventSelected: (CountdownEvent, Boolean) -> Unit) {
                     supportingContent = { 
                         Text(com.countdown.widgetproremain.util.DateUtils.formatTargetDate(event.targetDate)) 
                     },
-                    modifier = Modifier.clickable { onEventSelected(event, showSeconds) }
+                    modifier = Modifier.clickable { onEventSelected(event, showSeconds, useSmartColors) }
                 )
-                Divider()
+                HorizontalDivider()
             }
             if (events.isEmpty()) {
                 item {
